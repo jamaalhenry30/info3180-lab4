@@ -6,7 +6,7 @@ This file creates your application.
 """
 import os
 from app import app
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, send_from_directory, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
 from .forms import UploadForm
 
@@ -42,7 +42,7 @@ def upload():
         photo.save(os.path.join(
             app.config['UPLOAD_FOLDER'], filename
         ))
-        
+
         flash('File Saved', 'success')
         return redirect(url_for('home'))
 
@@ -61,6 +61,28 @@ def login():
             flash('You were logged in', 'success')
             return redirect(url_for('upload'))
     return render_template('login.html', error=error)
+
+def get_uploaded_images():
+    rootdir = os.getcwd()
+    lst = []
+    for subdir, dirs, files in os.walk("./uploads"):
+        for file in files:
+            lst.append(os.path.join(subdir,file))
+    return lst
+
+
+
+@app.route("/uploads/<filename>")
+def get_image(filename):
+    rootdir = os.getcwd()
+    return send_from_directory(os.path.join(rootdir,app.config['UPLOAD_FOLDER']),filename)
+
+@app.route("/files")
+def files():
+    if not session.get('logged_in'):
+        abort(401)
+    x = get_uploaded_images()
+    return render_template('files.html', file= x)
 
 
 @app.route('/logout')
